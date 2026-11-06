@@ -58,6 +58,14 @@ they are (README has the current ones).
   (`pluginkit -e use -i com.sudorender.sudopen.finder`); `pluginkit -m -v -i
   com.sudorender.sudopen.finder` shows its state. Sign it before the app
   (inside out), with `macos/finder/entitlements.plist`.
+  - Finder calls `menuForMenuKind:` on a background thread: build the menu
+    there (do not bail out when not on the main thread, that was the bug
+    that hid the item).
+  - It watches "/" only. Watching other volumes (or any folder that is in
+    the sidebar) makes Finder put our icon on them in the sidebar. Confirmed
+    on the startup disk; other drives are untested and that is accepted.
+  - Debug log: `~/Library/Containers/com.sudorender.sudopen.finder/Data/
+    Library/Logs/sudopen-finder.log` (one line per menu request).
 - `macos/icon/icon.swift`: draws the icon (`scripts/make-icon.sh` builds
   `macos/AppIcon.icns`). `macos/dmg/`: DMG background and dmgbuild layout.
 

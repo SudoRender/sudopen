@@ -28,20 +28,33 @@ define_class!(
         #[unsafe(method_id(init))]
         fn init(this: Allocated<Self>) -> Option<Retained<Self>> {
             let this: Option<Retained<Self>> = unsafe { msg_send![super(this.set_ivars(())), init] };
-            // Watch the whole disk so the menu shows up everywhere.
+            // Watch "/" only. Watching a folder that is in Finder's sidebar
+            // (like a drive) makes Finder put our icon on it, the way Dropbox
+            // badges its folder.
             let root = NSURL::fileURLWithPath(&NSString::from_str("/"));
             unsafe { FIFinderSyncController::defaultController().setDirectoryURLs(Some(&NSSet::from_slice(&[&*root]))) };
+            log("init, watching /");
             this
         }
 
         #[unsafe(method_id(menuForMenuKind:))]
         fn menu_for_menu_kind(&self, kind: FIMenuKind) -> Option<Retained<NSMenu>> {
-            build_menu(kind)
+            let files = selected_files();
+            let menu = build_menu(kind, &files);
+            log(&format!(
+                "menu kind={} files={} first={:?} -> {}",
+                kind.0,
+                files.len(),
+                files.first(),
+                menu.is_some()
+            ));
+            menu
         }
 
         #[unsafe(method(openInSudopen:))]
         fn open_in_sudopen(&self, _sender: Option<&AnyObject>) {
             let files = selected_files();
+            log(&format!("open requested for {} file(s)", files.len()));
             if files.is_empty() {
                 return;
             }
@@ -59,17 +72,21 @@ define_class!(
                 .collect();
             comps.setQueryItems(Some(&NSArray::from_retained_slice(&items)));
             if let Some(url) = comps.URL() {
-                NSWorkspace::sharedWorkspace().openURL(&url);
+                let ok = NSWorkspace::sharedWorkspace().openURL(&url);
+                log(&format!("open {} file(s) -> {ok}", files.len()));
             }
         }
     }
 );
 
-fn build_menu(kind: FIMenuKind) -> Option<Retained<NSMenu>> {
-    if kind != FIMenuKind::ContextualMenuForItems || selected_files().is_empty() {
+fn build_menu(kind: FIMenuKind, files: &[PathBuf]) -> Option<Retained<NSMenu>> {
+    if kind != FIMenuKind::ContextualMenuForItems || files.is_empty() {
         return None;
     }
-    let mtm = MainThreadMarker::new()?;
+    // Finder calls menuForMenuKind: on a background thread, and expects the
+    // menu built there (Apple's template does exactly this); the menu is only
+    // serialized and sent back to Finder, never shown from this process.
+    let mtm = unsafe { MainThreadMarker::new_unchecked() };
     let menu = NSMenu::initWithTitle(NSMenu::alloc(mtm), &NSString::from_str(""));
     let item = unsafe {
         NSMenuItem::initWithTitle_action_keyEquivalent(
@@ -88,15 +105,31 @@ fn build_menu(kind: FIMenuKind) -> Option<Retained<NSMenu>> {
     Some(menu)
 }
 
-/// Selected regular files (folders are skipped).
+/// Appends to Library/Logs/sudopen-finder.log inside the extension's
+/// sandbox container (~/Library/Containers/com.sudorender.sudopen.finder/Data).
+fn log(msg: &str) {
+    use std::io::Write;
+    let Some(home) = std::env::var_os("HOME") else { return };
+    let path = PathBuf::from(home).join("Library/Logs/sudopen-finder.log");
+    if std::fs::metadata(&path).is_ok_and(|m| m.len() > 256 * 1024) {
+        let _ = std::fs::remove_file(&path);
+    }
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+        let t = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs());
+        let _ = writeln!(f, "[{t}] {msg}");
+    }
+}
+
+/// Selected files. Folders are skipped, judged from the URL (Finder gives
+/// folder URLs a trailing slash) since the sandbox may not let us stat them.
 fn selected_files() -> Vec<PathBuf> {
     let Some(urls) = (unsafe { FIFinderSyncController::defaultController().selectedItemURLs() }) else {
         return Vec::new();
     };
     urls.iter()
+        .filter(|u| !u.hasDirectoryPath())
         .filter_map(|u| u.path())
         .map(|p| PathBuf::from(p.to_string()))
-        .filter(|p| !p.is_dir())
         .collect()
 }
 
