@@ -4,6 +4,19 @@ Native macOS file viewer in Rust. Goal number one: opens ultra fast. Every
 change that touches the open path must keep `scripts/bench.sh` numbers where
 they are (README has the current ones).
 
+## Product decisions (Nov 2026)
+
+- Viewer first. An Edit button that switches to an editor comes later; a
+  short delay when switching is acceptable, opening is not.
+- Cmd+T toggles text/rendered preview for HTML, Markdown and CSV (next
+  milestone). HTML preview is static: JavaScript off.
+- One window per file, no tabs (so Cmd+T is free).
+- App stays running in the background so opens are instant.
+- Distribution: direct download, Developer ID + notarization. No App Store
+  (the sandbox would break the CLI and opening arbitrary paths).
+- Mac first. Windows later as a separate front end on `sudopen-core`.
+- Personal tool first, maybe sold later.
+
 ## Layout
 
 - `crates/core` (`sudopen-core`): no UI. File loading (`source.rs`, mmap at
