@@ -75,8 +75,21 @@ they are (README has the current ones).
   (ad-hoc signed).
 - `scripts/install.sh`: install to /Applications and link `sudopen` on PATH.
 - `scripts/dmg.sh`: Developer ID signed app and DMG in `target/dist/`,
-  notarized and stapled when the notarytool profile `gabgren` (or
-  `NOTARY_PROFILE`) exists in the keychain; otherwise it says so and skips.
+  notarized and stapled with `NOTARY_APPLE_ID`/`NOTARY_TEAM_ID`/
+  `NOTARY_PASSWORD` (CI) or the keychain profile `gabgren`; otherwise it
+  says so and skips. `UNIVERSAL=1` (honored by bundle.sh) builds arm64 +
+  x86_64.
+- Releases: bump `version` in Cargo.toml, push tag `vX.Y.Z`;
+  `.github/workflows/release.yml` (macos-15, SudoRender org secrets
+  `APPLE_CERTIFICATE_BASE64`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_ID`,
+  `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD`) builds universal, signs, notarizes
+  and attaches the DMG. Run it by hand with a `tag` input to rebuild an
+  existing release. The agent's shell cannot reach the local notary profile,
+  so notarize through CI.
+- `scripts/notices.sh`: regenerate THIRD_PARTY_NOTICES.md (crate licenses,
+  Oniguruma, bat/two-face syntaxes and themes) after dependency changes. It
+  ships in the app's Resources with LICENSE; Credits.html feeds the About
+  window.
 - `scripts/bench.sh`: timings. Restarts the app.
 - `sudopen --timing <file>`: total time to first frame plus a per-phase
   breakdown (cold starts include process startup phases).
@@ -89,14 +102,12 @@ they are (README has the current ones).
 ## Conventions
 
 - Commit as the global git identity (gabgren <github@gabgren.com>).
+- MIT licensed (copyright Gabgren 2000 Inc. / SudoRender).
 - Keep `core` free of platform code.
 - No new dependencies on the open path without measuring.
 
 ## Known gaps
 
-- Notarization has not run yet: the `gabgren` notarytool profile was not
-  found from the agent's shell. Unnotarized DMGs are rejected by Gatekeeper
-  on other Macs.
 - One SIGABRT on quit was seen once (Nov 5, stripped binary, not
   reproduced). Panics now go to `~/Library/Logs/sudopen.log`.
 - Previews are built once per window and not refreshed if the file changes.

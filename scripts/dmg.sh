@@ -3,8 +3,9 @@
 #
 # The app and the DMG are signed with the Developer ID Application identity
 # from the keychain (override with SIGN_ID), with the hardened runtime.
-# The DMG is then notarized and stapled if the notarytool keychain profile
-# exists (NOTARY_PROFILE, default "gabgren"; NOTARIZE=0 skips it).
+# The DMG is then notarized and stapled, with NOTARY_APPLE_ID, NOTARY_TEAM_ID
+# and NOTARY_PASSWORD if set (CI), otherwise with the notarytool keychain
+# profile NOTARY_PROFILE (default "gabgren"). NOTARIZE=0 skips it.
 # dmgbuild is installed once into target/dmgbuild-venv.
 set -eu
 cd "$(dirname "$0")/.."
@@ -46,8 +47,16 @@ fi
 
 profile="${NOTARY_PROFILE:-gabgren}"
 if [ "${NOTARIZE:-1}" = 1 ] && [ -n "$sign_id" ]; then
-  if xcrun notarytool history --keychain-profile "$profile" >/dev/null 2>&1; then
-    xcrun notarytool submit "$out" --keychain-profile "$profile" --wait
+  submitted=1
+  if [ -n "${NOTARY_APPLE_ID:-}" ]; then
+    xcrun notarytool submit "$out" --apple-id "$NOTARY_APPLE_ID" --team-id "$NOTARY_TEAM_ID" \
+      --password "$NOTARY_PASSWORD" --wait --timeout 30m
+  elif xcrun notarytool history --keychain-profile "$profile" >/dev/null 2>&1; then
+    xcrun notarytool submit "$out" --keychain-profile "$profile" --wait --timeout 30m
+  else
+    submitted=0
+  fi
+  if [ "$submitted" = 1 ]; then
     xcrun stapler staple "$out"
     spctl --assess --type open --context context:primary-signature -v "$out"
   else

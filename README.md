@@ -27,8 +27,10 @@ Planned: Edit mode, Quick Look for every other file type, Windows.
 
 ## Install
 
-Open `sudopen-<version>.dmg` and drag sudopen into Applications. On first
-launch it offers to install the `sudopen` command.
+Download `sudopen-<version>.dmg` from
+[Releases](https://github.com/SudoRender/sudopen/releases), open it and drag
+sudopen into Applications. On first launch it offers to install the
+`sudopen` command. macOS 13 or later, Apple Silicon or Intel.
 
 ## Build
 
@@ -38,8 +40,14 @@ scripts/install.sh         # copy to /Applications and link the `sudopen` comman
 scripts/dmg.sh             # signed (and notarized, if set up) target/dist/sudopen-<version>.dmg
 scripts/bench.sh           # open-to-first-frame timings
 scripts/make-icon.sh       # regenerate macos/AppIcon.icns
+scripts/notices.sh         # regenerate THIRD_PARTY_NOTICES.md after changing dependencies
 cargo test --workspace
 ```
+
+Releases are built by CI: bump `version` in `Cargo.toml`, commit, and push a
+`vX.Y.Z` tag. `.github/workflows/release.yml` builds a universal app, signs
+it with the SudoRender Developer ID, notarizes the DMG and attaches it to the
+GitHub release.
 
 ## Speed (M-series Mac, `scripts/bench.sh`)
 
@@ -56,3 +64,8 @@ cargo test --workspace
 Measured from the moment the `sudopen` command starts to the end of the
 first `drawRect`. The frame reaches the screen on the next display refresh.
 About 45 ms of a cold start is AppKit connecting to the window server.
+
+## License
+
+MIT, see [LICENSE](LICENSE). Bundled third-party software and its licenses
+are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

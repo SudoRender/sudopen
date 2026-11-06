@@ -3,6 +3,7 @@ name = "sudopen-finder"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
+license.workspace = true
 
 # Finder Sync extension: a top-level "Open in sudopen" item in Finder's
 # right-click menu. Bundled as sudopen.app/Contents/PlugIns/sudopen-finder.appex.
