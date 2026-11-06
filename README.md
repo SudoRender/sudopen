@@ -9,6 +9,8 @@ Opens any file, fast. A native macOS viewer written in Rust.
 - **Cmd+T** switches between source and a rendered preview for Markdown
   (GitHub style, highlighted code blocks), HTML (JavaScript off) and CSV/TSV
   (a native table that only parses the rows on screen).
+- Right-click any file in Finder → Open in sudopen (a macOS Service; on
+  some setups it sits under Services or Quick Actions).
 - Stays running in the background, so opening the next file takes a few ms.
 - `sudopen` command: offered on first launch, or sudopen menu → Install
   Command Line Tool.

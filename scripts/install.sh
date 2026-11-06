@@ -9,6 +9,8 @@ app=$(scripts/bundle.sh release | tail -1)
 rm -rf /Applications/sudopen.app
 cp -R "$app" /Applications/sudopen.app
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f /Applications/sudopen.app
+# Refresh the Services registry so "Open in sudopen" shows up in Finder.
+/System/Library/CoreServices/pbs -update
 bin="${1:-}"
 if [ -z "$bin" ]; then
   if [ -d /opt/homebrew/bin ] && [ -w /opt/homebrew/bin ]; then bin=/opt/homebrew/bin; else bin=/usr/local/bin; fi

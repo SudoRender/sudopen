@@ -12,6 +12,7 @@ use objc2::{DefinedClass, MainThreadOnly, define_class, msg_send, sel};
 use objc2_app_kit::{
     NSAlert, NSApplication, NSApplicationActivationPolicy, NSApplicationDelegate,
     NSBackingStoreType, NSBeep, NSBitmapImageFileType, NSMenuItem, NSModalResponseOK, NSOpenPanel,
+    NSPasteboard, NSPasteboardTypeFileURL,
     NSWindow, NSWindowDelegate, NSWindowStyleMask, NSWindowTabbingMode,
 };
 use objc2_foundation::{
@@ -101,7 +102,19 @@ define_class!(
 
         #[unsafe(method(sudopenFirstLaunch:))]
         fn first_launch(&self, _sender: Option<&AnyObject>) {
+            // Make sure Finder knows about our "Open in sudopen" service.
+            objc2_app_kit::NSUpdateDynamicServices();
             install::maybe_prompt(self.mtm());
+        }
+
+        /// The "Open in sudopen" service (Finder right-click menu), declared
+        /// under NSServices in Info.plist.
+        #[unsafe(method(openInSudopen:userData:error:))]
+        fn open_in_sudopen(&self, pboard: &NSPasteboard, _user_data: Option<&NSString>, _error: *mut *mut NSString) {
+            let mtm = self.mtm();
+            for path in pasteboard_paths(pboard) {
+                open_path(mtm, &path, None, false, None);
+            }
         }
 
         #[unsafe(method(validateMenuItem:))]
@@ -201,6 +214,20 @@ fn validate_preview_item(mtm: MainThreadMarker, item: &NSMenuItem) -> bool {
     enabled
 }
 
+/// File paths on a pasteboard (one per item, from their file URLs).
+fn pasteboard_paths(pboard: &NSPasteboard) -> Vec<PathBuf> {
+    let file_url = unsafe { NSPasteboardTypeFileURL };
+    let Some(items) = pboard.pasteboardItems() else { return Vec::new() };
+    items
+        .iter()
+        .filter_map(|item| item.stringForType(file_url))
+        .filter_map(|s| NSURL::URLWithString(&s))
+        .filter_map(|u| u.path())
+        .map(|p| PathBuf::from(p.to_string()))
+        .filter(|p| p.is_file())
+        .collect()
+}
+
 fn with_win<R>(window: &NSWindow, f: impl FnOnce(&Win) -> R) -> Option<R> {
     let ptr = window as *const NSWindow;
     WINDOWS.with_borrow(|ws| ws.iter().find(|w| Retained::as_ptr(&w.window) == ptr).map(f))
@@ -221,6 +248,8 @@ pub fn run(initial: Vec<PathBuf>) -> ! {
     startup_mark("policy");
     let delegate = AppDelegate::new(mtm, initial);
     app.setDelegate(Some(ProtocolObject::from_ref(&*delegate)));
+    let provider: &AnyObject = &delegate;
+    unsafe { app.setServicesProvider(Some(provider)) };
     DELEGATE.with(|d| d.set(delegate).ok());
     menu::install(&app, mtm);
     startup_mark("menu");

@@ -48,7 +48,9 @@ they are (README has the current ones).
     admin prompt.
   - `menu.rs`: menu bar.
 - `macos/Info.plist`: bundle id `com.sudorender.sudopen`, registered as an
-  Alternate viewer for text and for `public.data`.
+  Alternate viewer for text and for `public.data`, plus the "Open in sudopen"
+  service (NSServices, handled by `openInSudopen:userData:error:` on the app
+  delegate). After changing it, `pbs -update` refreshes Finder's menu.
 - `macos/icon/icon.swift`: draws the icon (`scripts/make-icon.sh` builds
   `macos/AppIcon.icns`). `macos/dmg/`: DMG background and dmgbuild layout.
 
