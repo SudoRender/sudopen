@@ -21,16 +21,32 @@ pub fn enable_finder_extension_once() {
     if !installed_app(&exe) {
         return;
     }
-    let defaults = NSUserDefaults::standardUserDefaults();
-    let key = NSString::from_str(FINDER_EXT_KEY);
-    if defaults.boolForKey(&key) {
+    if NSUserDefaults::standardUserDefaults().boolForKey(&NSString::from_str(FINDER_EXT_KEY)) {
         return;
     }
-    defaults.setBool_forKey(true, &key);
-    std::thread::spawn(|| {
-        let _ = Command::new("/usr/bin/pluginkit").args(["-e", "use", "-i", FINDER_EXT_ID]).status();
+    // .../sudopen.app/Contents/MacOS/sudopen -> .../Contents/PlugIns/...
+    let Some(appex) = exe.parent().and_then(Path::parent).map(|c| c.join("PlugIns/sudopen-finder.appex")) else {
+        return;
+    };
+    std::thread::spawn(move || {
+        let pluginkit = |args: &[&str]| Command::new("/usr/bin/pluginkit").args(args).output();
+        // On a fresh install macOS may not have picked the extension up
+        // yet: register it explicitly, then retry until it reports enabled.
+        let _ = pluginkit(&["-a", &appex.to_string_lossy()]);
+        for _ in 0..10 {
+            let _ = pluginkit(&["-e", "use", "-i", FINDER_EXT_ID]);
+            let enabled = pluginkit(&["-m", "-i", FINDER_EXT_ID])
+                .is_ok_and(|o| String::from_utf8_lossy(&o.stdout).trim_start().starts_with('+'));
+            if enabled {
+                // Only now: if it failed, the next launch tries again.
+                NSUserDefaults::standardUserDefaults().setBool_forKey(true, &NSString::from_str(FINDER_EXT_KEY));
+                return;
+            }
+            std::thread::sleep(std::time::Duration::from_secs(1));
+        }
     });
 }
+
 /// Fallback location; on the default PATH of every Mac.
 const SYSTEM_BIN: &str = "/usr/local/bin";
 
