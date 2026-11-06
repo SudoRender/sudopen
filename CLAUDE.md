@@ -102,7 +102,7 @@ they are (README has the current ones).
 ## Conventions
 
 - Commit as the global git identity (gabgren <github@gabgren.com>).
-- MIT licensed (copyright Gabgren 2000 Inc. / SudoRender).
+- MIT licensed (copyright SudoRender).
 - Keep `core` free of platform code.
 - No new dependencies on the open path without measuring.
 
