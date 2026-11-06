@@ -5,7 +5,7 @@
 //! on `~/Library/Application Support/sudopen/ipc.sock`.
 //!
 //! Wire format: a command line, argument lines, then an empty line.
-//!   open\t<t0 ns>\t<wait 0|1>\n<path>[\t<line>]\n...\n
+//!   open\t<t0 ns>\t<wait 0|1>\n<path>\t<line, 0 = none>\t<preview 0|1>\n...\n
 //!   activate\n\n
 //!   snapshot\n<png path>\n\n
 //!   quit\n\n
@@ -17,10 +17,11 @@ use std::path::PathBuf;
 use std::sync::mpsc::{self, Sender};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-/// A file to open, optionally at a line (1-based).
+/// A file to open, optionally at a line (1-based) or straight in preview.
 pub struct Target {
     pub path: PathBuf,
     pub line: Option<u64>,
+    pub preview: bool,
 }
 
 pub enum Request {
@@ -45,11 +46,8 @@ pub fn write_request(stream: &mut UnixStream, req: &Request) -> io::Result<()> {
         Request::Open { targets, t0, wait } => {
             msg.push_str(&format!("open\t{t0}\t{}\n", *wait as u8));
             for t in targets {
-                msg.push_str(&t.path.to_string_lossy());
-                if let Some(line) = t.line {
-                    msg.push_str(&format!("\t{line}"));
-                }
-                msg.push('\n');
+                let line = t.line.unwrap_or(0);
+                msg.push_str(&format!("{}\t{line}\t{}\n", t.path.to_string_lossy(), t.preview as u8));
             }
         }
         Request::Activate => msg.push_str("activate\n"),
@@ -82,11 +80,11 @@ fn read_request(reader: &mut impl BufRead) -> io::Result<Request> {
             let wait = parts.next() == Some("1");
             let targets = lines[1..]
                 .iter()
-                .map(|l| match l.rsplit_once('\t') {
-                    Some((p, n)) if n.parse::<u64>().is_ok() => {
-                        Target { path: p.into(), line: n.parse().ok() }
-                    }
-                    _ => Target { path: l.into(), line: None },
+                .filter_map(|l| {
+                    let mut it = l.rsplitn(3, '\t');
+                    let preview = it.next()? == "1";
+                    let line = it.next()?.parse::<u64>().ok().filter(|&n| n > 0);
+                    Some(Target { path: it.next()?.into(), line, preview })
                 })
                 .collect();
             Request::Open { targets, t0, wait }

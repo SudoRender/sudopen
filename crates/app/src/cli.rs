@@ -5,7 +5,7 @@ use std::ffi::OsString;
 use std::io::{BufRead, BufReader};
 use std::os::unix::net::UnixStream;
 use std::os::unix::process::CommandExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
@@ -17,6 +17,7 @@ sudopen: open any file, fast.
 Usage: sudopen [options] <file>[:line]...
 
 Options:
+  -p, --preview    open Markdown, HTML and CSV files rendered (Cmd+T toggles)
   --timing         wait until each window has drawn and print how long it took
   --quit           quit the running app
   -V, --version    print version
@@ -26,6 +27,7 @@ Options:
 pub fn run(args: Vec<OsString>, t0: u64) -> i32 {
     let mut files = Vec::new();
     let mut timing = false;
+    let mut preview = false;
     let mut quit = false;
     let mut snapshot = None;
     let mut it = args.into_iter();
@@ -40,6 +42,7 @@ pub fn run(args: Vec<OsString>, t0: u64) -> i32 {
                 return 0;
             }
             Some("--timing") => timing = true,
+            Some("-p" | "--preview") => preview = true,
             Some("--quit") => quit = true,
             // Debug: write a PNG of the frontmost window.
             Some("--snapshot") => snapshot = it.next().map(PathBuf::from),
@@ -78,6 +81,9 @@ pub fn run(args: Vec<OsString>, t0: u64) -> i32 {
     } else if targets.is_empty() {
         Request::Activate
     } else {
+        for t in &mut targets {
+            t.preview = preview;
+        }
         Request::Open { targets, t0, wait: timing }
     };
     let wants_reply = timing || matches!(req, Request::Snapshot(_));
@@ -98,6 +104,8 @@ pub fn run(args: Vec<OsString>, t0: u64) -> i32 {
         return 1;
     }
     if wants_reply {
+        // Never hang if the app stops answering.
+        let _ = stream.set_read_timeout(Some(Duration::from_secs(20)));
         for line in BufReader::new(stream).lines().map_while(Result::ok) {
             let mut parts = line.splitn(4, '\t');
             match (parts.next(), parts.next(), parts.next(), parts.next()) {
@@ -120,18 +128,32 @@ pub fn run(args: Vec<OsString>, t0: u64) -> i32 {
 
 /// Starts the app and waits for its socket.
 fn launch_and_connect() -> std::io::Result<UnixStream> {
-    // Start the binary directly in app mode, detached from the terminal.
-    // Inside a .app it still checks in with LaunchServices as that app (Dock
-    // icon, Finder opens go to it), and it skips the 40-90 ms LaunchServices
-    // adds to `open -a`.
     let exe = std::env::current_exe()?.canonicalize()?;
-    Command::new(&exe)
-        .arg("--app")
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .process_group(0)
-        .spawn()?;
+    match enclosing_bundle(&exe) {
+        // A real .app goes through LaunchServices. Spawning the binary
+        // ourselves is 40-90 ms faster, but the app then belongs to the
+        // terminal session and dies when it closes, and macOS treats the
+        // terminal as responsible for its file-access permissions.
+        Some(bundle) => {
+            let ok = Command::new("/usr/bin/open").arg("-a").arg(bundle).stdin(Stdio::null()).status()?;
+            if !ok.success() {
+                return Err(std::io::Error::other("`open -a` failed"));
+            }
+        }
+        // A bare dev binary: run it in app mode in its own session.
+        None => {
+            let mut cmd = Command::new(&exe);
+            cmd.arg("--app").stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+            // SAFETY: setsid is async-signal-safe.
+            unsafe {
+                cmd.pre_exec(|| {
+                    libc::setsid();
+                    Ok(())
+                });
+            }
+            cmd.spawn()?;
+        }
+    }
     let deadline = Instant::now() + Duration::from_secs(10);
     loop {
         match UnixStream::connect(ipc::socket_path()) {
@@ -142,15 +164,28 @@ fn launch_and_connect() -> std::io::Result<UnixStream> {
     }
 }
 
+/// `/x/sudopen.app` for `/x/sudopen.app/Contents/MacOS/sudopen`.
+fn enclosing_bundle(exe: &Path) -> Option<PathBuf> {
+    let macos = exe.parent()?;
+    let contents = macos.parent()?;
+    let bundle = contents.parent()?;
+    let ok = macos.file_name()? == "MacOS"
+        && contents.file_name()? == "Contents"
+        && bundle.extension()? == "app";
+    ok.then(|| bundle.to_path_buf())
+}
+
 /// `file` or `file:line` (only when `file:line` itself does not exist).
 fn resolve(arg: &std::path::Path) -> std::io::Result<Target> {
     match std::fs::canonicalize(arg) {
-        Ok(path) => Ok(Target { path, line: None }),
+        Ok(path) => Ok(Target { path, line: None, preview: false }),
         Err(e) => {
             let s = arg.to_string_lossy();
             let parsed = s.rsplit_once(':').and_then(|(p, n)| Some((p, n.parse::<u64>().ok()?)));
             match parsed {
-                Some((p, line)) => Ok(Target { path: std::fs::canonicalize(p)?, line: Some(line.max(1)) }),
+                Some((p, line)) => {
+                    Ok(Target { path: std::fs::canonicalize(p)?, line: Some(line.max(1)), preview: false })
+                }
                 None => Err(e),
             }
         }

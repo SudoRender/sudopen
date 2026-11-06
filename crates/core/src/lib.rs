@@ -5,7 +5,9 @@
 pub mod highlight;
 pub mod layout;
 pub mod lines;
+pub mod markdown;
 pub mod source;
+pub mod table;
 
 pub use syntect;
 
@@ -97,6 +99,17 @@ impl Document {
 
     pub fn source(&self) -> &Source {
         &self.source
+    }
+
+    /// Shared handle on the bytes, for previews built from the same file.
+    pub fn shared_source(&self) -> Arc<Source> {
+        self.source.clone()
+    }
+
+    /// Cancelled when the document is dropped; hand it to background work
+    /// tied to this document.
+    pub fn cancel_flag(&self) -> Arc<AtomicBool> {
+        self.cancel.clone()
     }
 
     pub fn path(&self) -> &Path {

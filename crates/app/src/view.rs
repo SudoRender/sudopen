@@ -61,7 +61,7 @@ impl FirstPaint {
     }
 
     /// Sends "painted\t<total ms>\t<path>\t<phase breakdown>".
-    fn report(mut self) {
+    pub fn report(mut self) {
         self.mark("drawn");
         let Some(tx) = self.tx else { return };
         let mut prev = self.t0;
@@ -353,6 +353,24 @@ impl TextView {
         st.scroll_y = (PAD_TOP + n as f64 * st.line_h - h / 3.0).max(0.0);
         st.scroll_x = 0.0;
         self.setNeedsDisplay(true);
+    }
+
+    pub fn shared_source(&self) -> std::sync::Arc<sudopen_core::source::Source> {
+        self.ivars().st.borrow().doc.shared_source()
+    }
+
+    pub fn cancel_flag(&self) -> std::sync::Arc<std::sync::atomic::AtomicBool> {
+        self.ivars().st.borrow().doc.cancel_flag()
+    }
+
+    pub fn path(&self) -> std::path::PathBuf {
+        self.ivars().st.borrow().doc.path().to_path_buf()
+    }
+
+    /// Hands over the pending `--timing` report, for when another view is
+    /// shown before this one ever draws.
+    pub fn take_first_paint(&self) -> Option<FirstPaint> {
+        self.ivars().st.borrow_mut().first_paint.take()
     }
 
     pub fn background(&self) -> Retained<NSColor> {

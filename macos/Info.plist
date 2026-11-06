@@ -10,6 +10,8 @@
 	<string>com.sudorender.sudopen</string>
 	<key>CFBundleExecutable</key>
 	<string>sudopen</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

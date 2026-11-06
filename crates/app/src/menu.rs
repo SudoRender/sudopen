@@ -37,6 +37,8 @@ pub fn install(app: &NSApplication, mtm: MainThreadMarker) {
     submenu(mtm, &bar, "sudopen", &[
         item(mtm, "About sudopen", sel!(orderFrontStandardAboutPanel:), ""),
         sep(),
+        item(mtm, "Install Command Line Tool…", sel!(installCommandLineTool:), ""),
+        sep(),
         item(mtm, "Hide sudopen", sel!(hide:), "h"),
         hide_others,
         item(mtm, "Show All", sel!(unhideAllApplications:), ""),
@@ -57,7 +59,11 @@ pub fn install(app: &NSApplication, mtm: MainThreadMarker) {
 
     let full_screen = item(mtm, "Enter Full Screen", sel!(toggleFullScreen:), "f");
     full_screen.setKeyEquivalentModifierMask(NSEventModifierFlags::Command | NSEventModifierFlags::Control);
-    submenu(mtm, &bar, "View", &[full_screen]);
+    submenu(mtm, &bar, "View", &[
+        item(mtm, "Show Preview", sel!(togglePreview:), "t"),
+        sep(),
+        full_screen,
+    ]);
 
     let window_menu = submenu(mtm, &bar, "Window", &[
         item(mtm, "Minimize", sel!(performMiniaturize:), "m"),
