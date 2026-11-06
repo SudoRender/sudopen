@@ -16,8 +16,10 @@ sudopen: open any file, fast.
 
 Usage: sudopen [options] <file>[:line]...
 
+Markdown, HTML and CSV/TSV files open rendered; Cmd+T shows the source.
+
 Options:
-  -p, --preview    open Markdown, HTML and CSV files rendered (Cmd+T toggles)
+  -s, --source     open Markdown, HTML and CSV files as text
   --timing         wait until each window has drawn and print how long it took
   --quit           quit the running app
   -V, --version    print version
@@ -27,7 +29,7 @@ Options:
 pub fn run(args: Vec<OsString>, t0: u64) -> i32 {
     let mut files = Vec::new();
     let mut timing = false;
-    let mut preview = false;
+    let mut source = false;
     let mut quit = false;
     let mut snapshot = None;
     let mut it = args.into_iter();
@@ -42,7 +44,9 @@ pub fn run(args: Vec<OsString>, t0: u64) -> i32 {
                 return 0;
             }
             Some("--timing") => timing = true,
-            Some("-p" | "--preview") => preview = true,
+            Some("-s" | "--source") => source = true,
+            // Preview is the default now; kept so old habits do not error.
+            Some("-p" | "--preview") => {}
             Some("--quit") => quit = true,
             // Debug: write a PNG of the frontmost window.
             Some("--snapshot") => snapshot = it.next().map(PathBuf::from),
@@ -82,7 +86,7 @@ pub fn run(args: Vec<OsString>, t0: u64) -> i32 {
         Request::Activate
     } else {
         for t in &mut targets {
-            t.preview = preview;
+            t.source = source;
         }
         Request::Open { targets, t0, wait: timing }
     };
@@ -178,13 +182,13 @@ fn enclosing_bundle(exe: &Path) -> Option<PathBuf> {
 /// `file` or `file:line` (only when `file:line` itself does not exist).
 fn resolve(arg: &std::path::Path) -> std::io::Result<Target> {
     match std::fs::canonicalize(arg) {
-        Ok(path) => Ok(Target { path, line: None, preview: false }),
+        Ok(path) => Ok(Target { path, line: None, source: false }),
         Err(e) => {
             let s = arg.to_string_lossy();
             let parsed = s.rsplit_once(':').and_then(|(p, n)| Some((p, n.parse::<u64>().ok()?)));
             match parsed {
                 Some((p, line)) => {
-                    Ok(Target { path: std::fs::canonicalize(p)?, line: Some(line.max(1)), preview: false })
+                    Ok(Target { path: std::fs::canonicalize(p)?, line: Some(line.max(1)), source: false })
                 }
                 None => Err(e),
             }

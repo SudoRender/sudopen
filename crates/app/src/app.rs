@@ -272,7 +272,7 @@ fn handle_request(req: Request, tx: Sender<String>) {
                         fp.marks.extend(STARTUP.lock().unwrap().iter().copied());
                     }
                     fp.mark("to-main");
-                    open_path(mtm, &t.path, t.line, t.preview, Some(fp));
+                    open_path(mtm, &t.path, t.line, t.source, Some(fp));
                 }
             }
             Request::Activate => {
@@ -293,11 +293,13 @@ pub fn activate(mtm: MainThreadMarker) {
     NSApplication::sharedApplication(mtm).activateIgnoringOtherApps(true);
 }
 
+/// Opens `path`, or brings its window forward. Markdown, HTML and CSV/TSV
+/// open in preview unless `source` is set or a `line` is asked for.
 pub fn open_path(
     mtm: MainThreadMarker,
     path: &Path,
     line: Option<u64>,
-    preview: bool,
+    source: bool,
     mut fp: Option<FirstPaint>,
 ) {
     let existing = WINDOWS.with_borrow(|ws| {
@@ -309,8 +311,8 @@ pub fn open_path(
                 set_preview(mtm, &window, false, None);
             }
             text.goto_line(line);
-        } else if preview && !showing {
-            set_preview(mtm, &window, true, None);
+        } else if source && showing {
+            set_preview(mtm, &window, false, None);
         }
         window.makeKeyAndOrderFront(None);
         activate(mtm);
@@ -334,8 +336,9 @@ pub fn open_path(
     if let Some(fp) = fp.as_mut() {
         fp.mark("load");
     }
+    let previewable = doc.preview.is_some();
     let window = create_window(mtm, path, line, doc, fp);
-    if preview && line.is_none() {
+    if previewable && !source && line.is_none() {
         let fp = with_win(&window, |w| w.text.take_first_paint()).flatten();
         set_preview(mtm, &window, true, fp);
     }

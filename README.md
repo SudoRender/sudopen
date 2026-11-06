@@ -6,9 +6,9 @@ Opens any file, fast. A native macOS viewer written in Rust.
   following light/dark mode.
 - Multi-GB files open as fast as tiny ones: the file is memory-mapped and only
   the lines on screen are read, laid out and highlighted.
-- **Cmd+T** switches between source and a rendered preview for Markdown
-  (GitHub style, highlighted code blocks), HTML (JavaScript off) and CSV/TSV
-  (a native table that only parses the rows on screen).
+- Markdown (GitHub style, highlighted code blocks), HTML (JavaScript off) and
+  CSV/TSV (a native table that only parses the rows on screen) open rendered.
+  **Cmd+T** switches to the source and back.
 - Right-click any file in Finder → Open in sudopen (a macOS Service; on
   some setups it sits under Services or Quick Actions).
 - Stays running in the background, so opening the next file takes a few ms.
@@ -18,7 +18,7 @@ Opens any file, fast. A native macOS viewer written in Rust.
 ```sh
 sudopen file.rs              # open
 sudopen app.log:1200         # open at a line
-sudopen -p README.md         # open straight in preview
+sudopen -s README.md         # open as text instead of rendered
 sudopen --timing big.log     # print time to first frame, by phase
 ```
 

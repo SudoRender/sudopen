@@ -8,7 +8,8 @@ they are (README has the current ones).
 
 - Viewer first. An Edit button that switches to an editor comes later; a
   short delay when switching is acceptable, opening is not.
-- Cmd+T toggles text/rendered preview for HTML, Markdown and CSV. HTML
+- HTML, Markdown and CSV/TSV open in preview first (decided Nov 6); Cmd+T
+  shows the source. `file:line` and `-s/--source` open the text. HTML
   preview is static: JavaScript off.
 - First launch from /Applications offers to install the `sudopen` command.
 - One window per file, no tabs (so Cmd+T is free).
@@ -67,7 +68,7 @@ they are (README has the current ones).
   breakdown (cold starts include process startup phases).
 - `sudopen --snapshot out.png`: PNG of the front window, web previews
   included. Use it to check rendering without screen-recording permission.
-- `sudopen -p <file>`: open straight in preview.
+- `sudopen -s <file>`: open a previewable file as text.
 - `sudopen --quit`: quit the running app. Do this after rebuilding, otherwise
   the CLI talks to the old process.
 
