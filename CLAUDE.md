@@ -52,7 +52,7 @@ they are (README has the current ones).
   Alternate viewer for text and for `public.data`, and the `sudopen://`
   URL scheme (`sudopen://open?path=...`, one `path` per file).
 - `crates/finder` + `macos/finder/`: Finder Sync extension (sandboxed
-  .appex in `Contents/PlugIns`) that puts "Open in sudopen" at the top level
+  .appex in `Contents/PlugIns`) that puts "sudopen this" at the top level
   of Finder's right-click menu for every file. It cannot read files, so it
   opens a `sudopen://` link. The app enables it once on first launch
   (`pluginkit -e use -i com.sudorender.sudopen.finder`); `pluginkit -m -v -i

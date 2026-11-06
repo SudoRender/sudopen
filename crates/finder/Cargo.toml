@@ -5,7 +5,7 @@ edition.workspace = true
 publish.workspace = true
 license.workspace = true
 
-# Finder Sync extension: a top-level "Open in sudopen" item in Finder's
+# Finder Sync extension: a top-level "sudopen this" item in Finder's
 # right-click menu. Bundled as sudopen.app/Contents/PlugIns/sudopen-finder.appex.
 [dependencies]
 objc2 = "0.6"

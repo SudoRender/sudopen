@@ -13,7 +13,7 @@ const PROMPTED_KEY: &str = "SudopenCLIPrompted";
 const FINDER_EXT_KEY: &str = "SudopenFinderExtensionEnabled";
 pub const FINDER_EXT_ID: &str = "com.sudorender.sudopen.finder";
 
-/// Turns on the Finder extension ("Open in sudopen" in the right-click
+/// Turns on the Finder extension ("sudopen this" in the right-click
 /// menu) the first time the installed app runs. Users can switch it off in
 /// System Settings; we never turn it back on after that.
 pub fn enable_finder_extension_once() {

@@ -1,4 +1,4 @@
-//! Finder Sync extension: adds "Open in sudopen" at the top level of
+//! Finder Sync extension: adds "sudopen this" at the top level of
 //! Finder's right-click menu for every file, whatever app normally opens it.
 //!
 //! The extension is sandboxed and cannot read the files, so it hands the
@@ -91,7 +91,7 @@ fn build_menu(kind: FIMenuKind, files: &[PathBuf]) -> Option<Retained<NSMenu>> {
     let item = unsafe {
         NSMenuItem::initWithTitle_action_keyEquivalent(
             NSMenuItem::alloc(mtm),
-            &NSString::from_str("Open in sudopen"),
+            &NSString::from_str("sudopen this"),
             Some(sel!(openInSudopen:)),
             &NSString::from_str(""),
         )

@@ -485,7 +485,7 @@ checksum = "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea"
 
 [[package]]
 name = "sudopen"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "block2",
  "dispatch2",
@@ -500,7 +500,7 @@ dependencies = [
 
 [[package]]
 name = "sudopen-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "csv",
  "memchr",
@@ -513,7 +513,7 @@ dependencies = [
 
 [[package]]
 name = "sudopen-finder"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "objc2",
  "objc2-app-kit",

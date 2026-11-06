@@ -9,7 +9,7 @@ app=$(scripts/bundle.sh release | tail -1)
 rm -rf /Applications/sudopen.app
 cp -R "$app" /Applications/sudopen.app
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f /Applications/sudopen.app
-# Turn on the Finder extension ("Open in sudopen" in the right-click menu).
+# Turn on the Finder extension ("sudopen this" in the right-click menu).
 # pbs -update drops the Service older builds registered.
 /System/Library/CoreServices/pbs -update
 pluginkit -a /Applications/sudopen.app/Contents/PlugIns/sudopen-finder.appex

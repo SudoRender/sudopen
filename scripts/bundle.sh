@@ -29,7 +29,7 @@ cp LICENSE THIRD_PARTY_NOTICES.md macos/Credits.html "$app/Contents/Resources/"
 sed "s/__VERSION__/$version/g" macos/Info.plist > "$app/Contents/Info.plist"
 printf 'APPL????' > "$app/Contents/PkgInfo"
 
-# Finder extension (right-click "Open in sudopen").
+# Finder extension (right-click "sudopen this").
 appex="$app/Contents/PlugIns/sudopen-finder.appex"
 mkdir -p "$appex/Contents/MacOS"
 cp "target/$profile/sudopen-finder" "$appex/Contents/MacOS/sudopen-finder"
