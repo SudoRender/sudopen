@@ -85,7 +85,9 @@ they are (README has the current ones).
   `APPLE_TEAM_ID`, `APPLE_APP_PASSWORD`) builds universal, signs, notarizes
   and attaches the DMG. Run it by hand with a `tag` input to rebuild an
   existing release. The agent's shell cannot reach the local notary profile,
-  so notarize through CI.
+  so notarize through CI. The repo is public: those org secrets must list `sudopen`
+  under Repository access (secrets scoped to private repos arrive empty and
+  the certificate import fails).
 - `scripts/notices.sh`: regenerate THIRD_PARTY_NOTICES.md (crate licenses,
   Oniguruma, bat/two-face syntaxes and themes) after dependency changes. It
   ships in the app's Resources with LICENSE; Credits.html feeds the About
