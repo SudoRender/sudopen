@@ -49,9 +49,15 @@ they are (README has the current ones).
     admin prompt.
   - `menu.rs`: menu bar.
 - `macos/Info.plist`: bundle id `com.sudorender.sudopen`, registered as an
-  Alternate viewer for text and for `public.data`, plus the "Open in sudopen"
-  service (NSServices, handled by `openInSudopen:userData:error:` on the app
-  delegate). After changing it, `pbs -update` refreshes Finder's menu.
+  Alternate viewer for text and for `public.data`, and the `sudopen://`
+  URL scheme (`sudopen://open?path=...`, one `path` per file).
+- `crates/finder` + `macos/finder/`: Finder Sync extension (sandboxed
+  .appex in `Contents/PlugIns`) that puts "Open in sudopen" at the top level
+  of Finder's right-click menu for every file. It cannot read files, so it
+  opens a `sudopen://` link. The app enables it once on first launch
+  (`pluginkit -e use -i com.sudorender.sudopen.finder`); `pluginkit -m -v -i
+  com.sudorender.sudopen.finder` shows its state. Sign it before the app
+  (inside out), with `macos/finder/entitlements.plist`.
 - `macos/icon/icon.swift`: draws the icon (`scripts/make-icon.sh` builds
   `macos/AppIcon.icns`). `macos/dmg/`: DMG background and dmgbuild layout.
 

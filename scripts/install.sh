@@ -9,8 +9,11 @@ app=$(scripts/bundle.sh release | tail -1)
 rm -rf /Applications/sudopen.app
 cp -R "$app" /Applications/sudopen.app
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f /Applications/sudopen.app
-# Refresh the Services registry so "Open in sudopen" shows up in Finder.
+# Turn on the Finder extension ("Open in sudopen" in the right-click menu).
+# pbs -update drops the Service older builds registered.
 /System/Library/CoreServices/pbs -update
+pluginkit -a /Applications/sudopen.app/Contents/PlugIns/sudopen-finder.appex
+pluginkit -e use -i com.sudorender.sudopen.finder
 bin="${1:-}"
 if [ -z "$bin" ]; then
   if [ -d /opt/homebrew/bin ] && [ -w /opt/homebrew/bin ]; then bin=/opt/homebrew/bin; else bin=/usr/local/bin; fi

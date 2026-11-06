@@ -35,25 +35,15 @@
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>© SudoRender</string>
-	<!-- Finder right-click menu: "Open in sudopen" on any file. An empty
-	     NSRequiredContext makes the service enabled by default. -->
-	<key>NSServices</key>
+	<!-- sudopen://open?path=... links, sent by the Finder extension. -->
+	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
-			<key>NSMenuItem</key>
-			<dict>
-				<key>default</key>
-				<string>Open in sudopen</string>
-			</dict>
-			<key>NSMessage</key>
-			<string>openInSudopen</string>
-			<key>NSPortName</key>
-			<string>sudopen</string>
-			<key>NSRequiredContext</key>
-			<dict/>
-			<key>NSSendFileTypes</key>
+			<key>CFBundleURLName</key>
+			<string>com.sudorender.sudopen</string>
+			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>public.data</string>
+				<string>sudopen</string>
 			</array>
 		</dict>
 	</array>

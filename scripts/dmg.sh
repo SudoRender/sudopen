@@ -16,8 +16,10 @@ work=target/dmg
 
 sign_id="${SIGN_ID:-$(security find-identity -v -p codesigning | sed -n 's/.*"\(Developer ID Application:[^"]*\)".*/\1/p' | head -1)}"
 if [ -n "$sign_id" ]; then
+  codesign --force --options runtime --timestamp --entitlements macos/finder/entitlements.plist \
+    --sign "$sign_id" "$app/Contents/PlugIns/sudopen-finder.appex"
   codesign --force --options runtime --timestamp --sign "$sign_id" "$app"
-  codesign --verify --strict "$app"
+  codesign --verify --strict --deep "$app"
 else
   echo "warning: no Developer ID identity; the app stays ad-hoc signed" >&2
 fi

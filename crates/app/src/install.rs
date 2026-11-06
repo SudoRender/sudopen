@@ -10,6 +10,27 @@ use objc2_foundation::{MainThreadMarker, NSString, NSUserDefaults};
 use crate::app::activate;
 
 const PROMPTED_KEY: &str = "SudopenCLIPrompted";
+const FINDER_EXT_KEY: &str = "SudopenFinderExtensionEnabled";
+pub const FINDER_EXT_ID: &str = "com.sudorender.sudopen.finder";
+
+/// Turns on the Finder extension ("Open in sudopen" in the right-click
+/// menu) the first time the installed app runs. Users can switch it off in
+/// System Settings; we never turn it back on after that.
+pub fn enable_finder_extension_once() {
+    let Some(exe) = app_binary() else { return };
+    if !installed_app(&exe) {
+        return;
+    }
+    let defaults = NSUserDefaults::standardUserDefaults();
+    let key = NSString::from_str(FINDER_EXT_KEY);
+    if defaults.boolForKey(&key) {
+        return;
+    }
+    defaults.setBool_forKey(true, &key);
+    std::thread::spawn(|| {
+        let _ = Command::new("/usr/bin/pluginkit").args(["-e", "use", "-i", FINDER_EXT_ID]).status();
+    });
+}
 /// Fallback location; on the default PATH of every Mac.
 const SYSTEM_BIN: &str = "/usr/local/bin";
 

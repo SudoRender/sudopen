@@ -1,0 +1,13 @@
+[package]
+name = "sudopen-finder"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+# Finder Sync extension: a top-level "Open in sudopen" item in Finder's
+# right-click menu. Bundled as sudopen.app/Contents/PlugIns/sudopen-finder.appex.
+[dependencies]
+objc2 = "0.6"
+objc2-foundation = "0.3"
+objc2-app-kit = "0.3"
+objc2-finder-sync = "0.3"
